@@ -1,5 +1,3 @@
-"use server";
-
 import { Button } from "@/components/ui/button"
 import { UserButton } from "@clerk/nextjs"
 import { auth } from "@clerk/nextjs/server"
@@ -7,16 +5,17 @@ import { ArrowRight, LogIn } from "lucide-react"
 import Link from "next/link"
 
 export default async function Home() {
+  const { userId, redirectToSignIn } = await auth()
+  //if (!userId) return redirectToSignIn() //redirect the user to the sign-in page if they are not authenticated
 
-const {userId} = await auth()
-const isAuth = !!userId
-console.log("userId:", userId); // Check if userId is populated
-console.log("isAuth:", isAuth);
+  const isAuth = !!userId
+//console.log("userId:", userId); // Check if userId is populated
+//console.log("isAuth:", auth); // Check if user is authenticated
 
   return (
       <div className="w-screen min-h-screen bg-gradient-to-r from-teal-400 to-gray-800">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-          <div className="flex flex-col items-center">
+          <div className="flex flex-col items-center md:grid-cols-2">
             <div className="flex items-center">
             <h1 className="mr-8 text-5xl font-semibold">Chat with any PDF </h1>
             <UserButton afterSignOutUrl="/" />

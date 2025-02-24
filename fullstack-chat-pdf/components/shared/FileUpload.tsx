@@ -3,7 +3,7 @@
 "use client";
 
 //import { uploadToS3 } from '@/lib/s3v3';
-import { Inbox } from 'lucide-react'
+import { Inbox, Loader2 } from 'lucide-react'
 import React, {useState} from 'react'
 import {useDropzone} from 'react-dropzone'
 import {uploadToS3} from '@/app/api/middleware/s3'
@@ -13,7 +13,9 @@ import {toast} from 'react-hot-toast'
 
 const FileUpload = () => {
 
-  const {mutate} = useMutation({
+  const [uploading, setUploading]=React.useState(false);
+
+  const {mutate, isPending} = useMutation({
     mutationFn: async ({
       file_key,
       file_name 
@@ -33,6 +35,7 @@ const FileUpload = () => {
     accept: {"application/pdf": [".pdf"]}, // Only accept PDF files
     maxFiles: 1, //Allow only 1 file to be uploaded
     onDrop: async (acceptedFiles, fileRejections) => {
+      const file = acceptedFiles[0];
       console.log('Accepted files:' ,acceptedFiles);
       
       //check if it's more than one file
@@ -40,9 +43,6 @@ const FileUpload = () => {
         toast.error("Something went wrong. Make sure you're uploading 1 pdf file.");
         return;
       }
-      
-      const file = acceptedFiles[0];
-
 
       // Check file size (max=10mb)
       if (file.size > 10 * 1024 * 1024) {
@@ -50,25 +50,30 @@ const FileUpload = () => {
         return
       }
 
+
+
       try {
+        setUploading(true)
         console.log('File to upload:', file);
         
         const data = await uploadToS3(file)
         console.log('File uploaded successfully to S3:', data);
 
-        if(!data?.file_key || data.file_name){
-          toast.error("something went wrong");
+        if(!data?.file_key || !data?.file_name){
+          toast.error("something went wrong (line 59)");
           return;
         }
 
         mutate(data,{
           onSuccess: (data) => {
+            //toast.success(data.message)
             console.log(data);
           },
           onError: (err) => {
             toast.error("Error creating chat.");
             console.log(err);
           }
+
         }) 
         // TODO: Save the reference to the object in Postgres
         //const objectUrl = fileUpload.split("?")[0]
@@ -78,7 +83,9 @@ const FileUpload = () => {
       } catch (error) {
         console.error("Error during file upload: ", error);
       }
-
+      finally{
+        setUploading(false)
+      }
     }
   })
 
@@ -92,8 +99,22 @@ const FileUpload = () => {
         })}
       >
         <input {...getInputProps()} />
-        <Inbox className="w-10 h-10 text-blue-950" />
-        <p className="mt-2 text-sm text-slate-500">Drop PDF Here</p>
+        {uploading || isPending ? (
+          <div className='flex flex-col items-center'>
+           /** Loading State */
+            <Loader2 className='h-10 w-10 text-blue-500 animate-spin'/>
+            <p className="mt-2 text-sm text-slate-400">
+              Spilling Tea to GPT...
+            </p>
+          </div>
+        ) : (
+          <>
+          <Inbox className="w-10 h-10 text-blue-950" />
+          <p className="mt-2 text-sm text-slate-500">Drop PDF Here</p>
+          </>
+        )
+        }
+       
       </div>
     </div>
   );

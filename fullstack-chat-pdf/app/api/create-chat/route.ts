@@ -10,10 +10,10 @@ export async function POST(request: Request, response: Response) {
 		console.log(file_key, file_name);
 
 		const pages = await loadS3IntoPinecone(file_key);
+		console.log("Create chat");
 		return NextResponse.json(
-			pages
-			//{ message: "Chat successfully created", file_key, file_name },
-			//{ status: 200 }
+			{ message: "Chat successfully created", file_key, file_name },
+			{ status: 200 }
 		);
 	} catch (error) {
 		console.error("Something Happened: ", error);
